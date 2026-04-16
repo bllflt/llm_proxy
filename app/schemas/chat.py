@@ -1,14 +1,9 @@
-"""Chat message schemas."""
-
-from typing import Literal
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class ChatMessageSchema(BaseModel):
     """Single message in conversation history."""
 
-    role: Literal["user", "assistant"]
     content: str
 
 

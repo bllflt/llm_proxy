@@ -42,20 +42,24 @@ async def analyze_image(model_client: genai.Client, image_path: str) -> str | No
     with open(image_path, "rb") as image_file:
         image_bytes = image_file.read()
 
-    response = await model_client.aio.models.generate_content(
-        model="gemini-2.5-flash-lite",
-        contents=[
-            types.Part.from_bytes(data=image_bytes, mime_type="image/png"),
-            "Describe the person in the picture.",
-        ],
-        config=types.GenerateContentConfig(
-            system_instruction=CAPTION_SYSTEM_PROMPT,
-        ),
-    )
+    try:
+        response = await model_client.aio.models.generate_content(
+            model="gemini-2.5-flash-lite",
+            contents=[
+                types.Part.from_bytes(data=image_bytes, mime_type="image/png"),
+                "Describe the person in the picture.",
+            ],
+            config=types.GenerateContentConfig(
+                system_instruction=CAPTION_SYSTEM_PROMPT,
+            ),
+        )
+    except Exception as e:
+        raise RuntimeError(f"Error during Gemini image analysis: {str(e)}")
 
     if response is None:
         raise RuntimeError("Gemini returned no response for image analysis")
 
+    print(f"Gemini response: {response.text}")
     return response.text
 
 

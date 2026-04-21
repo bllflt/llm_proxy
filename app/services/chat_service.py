@@ -9,6 +9,7 @@ from google.genai.chats import AsyncChat
 
 from app.config import settings
 from app.schemas.chat import ChatRequest
+from app.services.stats_service import update_llm_usage
 
 client = redis.Redis.from_url(settings.REDIS_URL)
 
@@ -34,8 +35,10 @@ async def send_message(
     """
     genai_client = _get_genai_client(settings.GEMINI_API_KEY)
     print(message_content)
+
     try:
-        async with mcp_client:
+        local_mcp_client = Client(settings.MCP_ENDPOINT)
+        async with local_mcp_client:
             packed = await client.get("chat:1:history")
             if packed:
                 history = msgpack.unpackb(packed, raw=False)
@@ -45,13 +48,18 @@ async def send_message(
                 model=settings.CHAT_MODEL,
                 config=genai_types.GenerateContentConfig(
                     system_instruction="""
-                                    You are a helpful assistant. You have access to tools for looking up specific character details. 
-                                    However, for general questions (like history, fashion, culture), answer directly using your internal 
-                                    knowledge.
-                    """,
-                    tools=[mcp_client.session],
+                                        Helpful assistant writer. You have access to tools for looking up specific character details.
+                                        However, for general questions (like history, fashion, culture), answer directly using your internal
+                                        knowledge.
+                                        Do not discuss implementation details of the tools or mention that you are using tools.
+                                        Just provide the answer to the user's question.
+                                        Prefer referencing specific character fields, rather than infering or making assumptions.
+                                        For example, if the user asks "Is Donald a man?" then use the sex field to answer the question,
+                                        rather than infering based on the name or other details.
+                       """,
+                    tools=[local_mcp_client.session],
                     tool_config=genai_types.ToolConfig(
-                        function_calling_config=genai_types.FunctionCallingConfig(mode="AUTO")
+                        function_calling_config=genai_types.FunctionCallingConfig(mode=genai_types.FunctionCallingConfigMode.AUTO)
                     ),
                 ),
                 history=[genai_types.Content(**item) for item in history],
@@ -60,10 +68,13 @@ async def send_message(
             if response:
                 history_to_save = [item.model_dump() for item in chat.get_history()]
                 packed = msgpack.packb(history_to_save, use_bin_type=True)
-                await client.set(
-                    "chat:1:history", packed, ex=settings.CHAT_HISTORY_EXPIRE_MINUTES * 60
-                )
-                logging.error(response)
+                if packed:
+                    await client.set(
+                        "chat:1:history", packed, ex=settings.CHAT_HISTORY_EXPIRE_MINUTES * 60
+                    )
+                logging.error(response.usage_metadata)
+                if response.usage_metadata:
+                    await update_llm_usage("chat", response.usage_metadata.total_token_count)
                 if response.text:
                     return response.text
             else:

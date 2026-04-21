@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     CHAT_HISTORY_PREFIX: str = "chat"
     CHAT_MODEL: str = "gemini-2.5-flash"
 
+    STATS_PREFIX: str = "stats"
 
 settings = Settings()
 

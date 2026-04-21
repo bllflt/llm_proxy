@@ -1,3 +1,4 @@
+import logging
 import os
 
 from google import genai
@@ -6,13 +7,13 @@ from google.genai import types
 from app.schemas.caption import CaptionJobResult
 
 CAPTION_SYSTEM_PROMPT = """
-As image analysis tool, concentrate on the physical description of the subject in the picture. Ignore ephemeral attribures like mood, emotion, background, dress, actions
-and accessories. Try to sus out the gender, age, hair, skin tone, physique, ethnic and other physical descriptions that would help to uniquely identify the person.
+As image analysis tool, concentrate on the physical description of the subject in the picture. Exclude ephemeral descriptions or attribures like mood, emotion, background, dress, actions
+and accessories. Try to infer the gender, age, hair, skin tone, physique, ethnic and other physical descriptions that would help to uniquely identify the person.
 Consider if the person in the picture is non-human, or possibly a species from fantasy or science fiction, ie elves, orcs, ogres, and etc. Include species information
 only if the subject is non-human. 1-2 sentences is the sweet spot.
 Three sentences is pretty much the maximum length you should use unless there is something truly and outrageously unusual about the character.
 Remember that you don’t need to describe every single thing about them: Pick out their most interesting and unique features. The description should be suitable to
-pass to a text to image generator, that is don't start with "The photograph contains.." or "this picture contains..."
+pass to a text to image generator, as an example: don't start with "The photograph contains.." or "this picture contains..."
 Here is a good example:
 A pale-skinned elderly woman with long, white hair and a gaunt face. She has a skeletal appearance with deep-set eyes and prominent cheekbones. Her long, flowing white hair frames her face.
 """
@@ -34,7 +35,9 @@ def get_genai_client(api_key: str) -> genai.Client:
     return genai.Client(api_key=api_key)
 
 
-async def analyze_image(model_client: genai.Client, image_path: str) -> str | None:
+async def analyze_image(
+    model_client: genai.Client, image_path: str
+) -> tuple[str, types.GenerateContentResponseUsageMetadata] | tuple[None, None]:
     """Analyze an image file and return a short description."""
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image file does not exist: {image_path}")
@@ -56,18 +59,20 @@ async def analyze_image(model_client: genai.Client, image_path: str) -> str | No
     except Exception as e:
         raise RuntimeError(f"Error during Gemini image analysis: {str(e)}")
 
+    logging.info(f"Gemini image analysis response: {response}")
     if response is None:
         raise RuntimeError("Gemini returned no response for image analysis")
 
-    print(f"Gemini response: {response.text}")
-    return response.text
+    if response.text and response.usage_metadata:
+        return (response.text, response.usage_metadata)
+    return (None, None)
 
 
 async def compare_descriptions(
     model_client: genai.Client,
     existing_description: str,
     new_description: str,
-) -> CaptionJobResult:
+) -> tuple[CaptionJobResult, types.GenerateContentResponseUsageMetadata] | tuple[None, None]:
     """Compare two descriptions and return a merged result."""
     response = await model_client.aio.models.generate_content(
         model="gemini-2.5-flash-lite",
@@ -90,4 +95,6 @@ async def compare_descriptions(
     if response is None:
         raise RuntimeError("Gemini returned no response for comparison")
 
-    return CaptionJobResult.model_validate_json(response.text)
+    if response.text and response.usage_metadata:
+        return (CaptionJobResult.model_validate_json(response.text), response.usage_metadata)
+    return (None, None)

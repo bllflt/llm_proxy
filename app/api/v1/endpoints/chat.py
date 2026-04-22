@@ -41,7 +41,7 @@ async def send_chat_message(request: Request, message: ChatRequest) -> ChatRespo
         if response:
             response_text = response
         else:
-            response_text = "hello"
+            response_text = "Failed to get a response from the assistant."
 
         return ChatResponse(assistant=response_text)
 

@@ -6,6 +6,7 @@ from fastmcp import Client
 from google import genai
 from google.genai import types as genai_types
 from google.genai.chats import AsyncChat
+from google.genai.errors import APIError
 
 from app.config import settings
 from app.schemas.chat import ChatRequest
@@ -56,10 +57,13 @@ async def send_message(
                                         Prefer referencing specific character fields, rather than infering or making assumptions.
                                         For example, if the user asks "Is Donald a man?" then use the sex field to answer the question,
                                         rather than infering based on the name or other details.
+                                        Format the output as plain text.
                        """,
                     tools=[local_mcp_client.session],
                     tool_config=genai_types.ToolConfig(
-                        function_calling_config=genai_types.FunctionCallingConfig(mode=genai_types.FunctionCallingConfigMode.AUTO)
+                        function_calling_config=genai_types.FunctionCallingConfig(
+                            mode=genai_types.FunctionCallingConfigMode.AUTO
+                        )
                     ),
                 ),
                 history=[genai_types.Content(**item) for item in history],
@@ -79,6 +83,10 @@ async def send_message(
                     return response.text
             else:
                 raise RuntimeError("Gemini returned no response")
+    except APIError as e:
+        logging.error(f"APIError: {e.code} - {e.response}")
+        return None
+
     except Exception as e:
         print(e)
         return None

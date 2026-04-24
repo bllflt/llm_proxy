@@ -61,9 +61,9 @@ def test_get_caption_job_status(
     job_id = create_response.json()["job_id"]
 
     # Mock get to return the job data
-    from app.schemas.job import JobData, JobStatus
+    from app.schemas.job import CaptionJobData, JobStatus
 
-    job = JobData(
+    job = CaptionJobData(
         job_id=job_id,
         character_id=payload["character_id"],
         image_file=payload["image_file"],

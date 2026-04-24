@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     # Gemini
     GEMINI_API_KEY: str = ""
     RESULT_API_ENDPOINT: str = "http://127.0.0.1:5000/api/v1/ai/work/caption/complete"
+    IMAGE_UPLOAD_ENDPOINT: str = "http://127.0.0.1:5000/characters/upload-image"
     HTTP_TIMEOUT: int = 30
 
     # Redis

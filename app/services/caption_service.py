@@ -2,7 +2,7 @@ import httpx
 
 from app.config import settings
 from app.schemas.caption import CaptionJobResult
-from app.schemas.job import JobStatus
+from app.schemas.job import CaptionJobData, JobStatus
 from app.services.job_store import complete_job, fail_job, get_job, update_job_status
 from app.services.stats_service import update_llm_usage
 from app.utils.gemini import analyze_image, compare_descriptions, get_genai_client
@@ -24,7 +24,7 @@ async def submit_result(character_id: str, explanation: str | None, merge: str |
 
 async def process_caption_job(job_id: str) -> None:
     """Process a caption job end-to-end."""
-    job = await get_job(job_id)
+    job: CaptionJobData | None = await get_job(job_id)
     if job is None:
         return
 

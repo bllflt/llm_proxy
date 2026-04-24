@@ -25,7 +25,7 @@ class CaptionJobResponse(BaseModel):
     """Response returned when a caption job is created."""
 
     job_id: str
-    status: typing.Literal["pending"]
+    status: job.JobStatus = job.JobStatus.pending
 
 
 class CaptionStatusResponse(BaseModel):
@@ -34,5 +34,5 @@ class CaptionStatusResponse(BaseModel):
     job_id: str
     character_id: str
     status: job.JobStatus
-    result: dict[str, typing.Any] | None  = None
+    result: dict[str, typing.Any] | None = None
     error: str | None = None

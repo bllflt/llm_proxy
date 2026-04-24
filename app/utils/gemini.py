@@ -1,9 +1,11 @@
 import logging
 import os
 
+from fastmcp import Client
 from google import genai
 from google.genai import types
 
+from app.config import settings
 from app.schemas.caption import CaptionJobResult
 
 CAPTION_SYSTEM_PROMPT = """
@@ -25,6 +27,19 @@ The generated description could merge some of the characteristics of each one. F
 a Caucasian person, offer an Eurasian description or mixed heritage. If attributes are in clear opposition, tall vs short, just pick one,
 or merge the two, for example if one is a prototypical sword and sorcery muscular male barbarian, in the manner of Conan for example,
 and the other is a female then something like Red Sonja would be an acceptable plausible merge.
+"""
+
+GENERATE_IMAGE_PROMPT = """
+Use information from the character summary for character with the supplied character id and environ to construct
+a prompt for a text-to-image model such as Nano Banana, Chroma or Z-Image to create an upper body portrait photograph
+(3:4 aspect ratio) of the character posing for a picture.
+Use information about the character to set the mood and lighting, such has dark and gloomy for an evil character
+for example. Incorporate any mentioned colors or styling the character might have a disposition for , or any
+historical period mentioned in the character summery.  Set the background to be something appropriate for the
+character, like a smithy for a blacksmith for example, or a ruler sitting on a throne.  However, keep the focus
+on the character itself.
+
+environ: 13th century Eastern Mythiic Europe
 """
 
 
@@ -98,3 +113,63 @@ async def compare_descriptions(
     if response.text and response.usage_metadata:
         return (CaptionJobResult.model_validate_json(response.text), response.usage_metadata)
     return (None, None)
+
+
+async def generate_image_prompt(
+    model_client: genai.Client, character_id: str
+) -> tuple[str, types.GenerateContentResponseUsageMetadata] | tuple[None, None]:
+
+    local_mcp_client = Client(settings.MCP_ENDPOINT)
+    try:
+        async with local_mcp_client:
+            (response,) = (
+                await model_client.aio.models.generate_content(
+                    model="gemini-2.5-flash-lite",
+                    contents=f"Generate a prompt for character id:{character_id}",
+                    config=types.GenerateContentConfig(
+                        system_instruction=GENERATE_IMAGE_PROMPT,
+                        tools=[local_mcp_client.session],
+                        tool_config=types.ToolConfig(
+                            function_calling_config=types.FunctionCallingConfig(
+                                mode=types.FunctionCallingConfigMode.AUTO
+                            )
+                        ),
+                    ),
+                ),
+            )
+
+    except Exception as e:
+        raise RuntimeError(f"Error during Gemini image generation: {str(e)}")
+    if response.text and response.usage_metadata:
+        return (response.text, response.usage_metadata)
+    return (None, None)
+
+
+async def generate_image(
+    model_client: genai.Client, character_id: str, prompt: str
+) -> list[types.Image]:
+    images = []
+    try:
+        response: types.GenerateContentResponse = await model_client.aio.models.generate_content(
+            model="gemini-3.1-flash-image-preview",
+            contents=[prompt],
+            config=types.GenerateContentConfig(
+                http_options=types.HttpOptions(timeout=60000),
+                image_config=types.ImageConfig(aspect_ratio="3:4"),
+            ),
+        )
+        logging.error(f"done: {response}")
+        if (response is None) or (response.parts is None):
+            return images
+
+        for part in response.parts:
+            if part.text is not None:
+                logging.info(part.text)
+            elif part.inline_data is not None:
+                image = part.as_image()
+                images.append(image)
+    except Exception as e:
+        logging.error(f"Error during Gemini image generation: {str(e)}")
+
+    logging.error(images)
+    return images

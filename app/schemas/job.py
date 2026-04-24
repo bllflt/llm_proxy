@@ -1,7 +1,13 @@
 from enum import StrEnum
-from typing import Any, Optional
+from typing import Annotated, Any, Optional
 
 from pydantic import BaseModel
+from pydantic import Field as PydanticField
+
+
+class JobType(StrEnum):
+    CAPTION = "caption"
+    IMAGE = "image"
 
 
 class JobStatus(StrEnum):
@@ -12,11 +18,23 @@ class JobStatus(StrEnum):
 
 
 class JobData(BaseModel):
+    type: JobType
     job_id: str
     character_id: str
-    image_file: str
     current_description: Optional[str] = None
     created_by: str
     status: JobStatus
-    result: dict[str, Any]| None = None
+    result: dict[str, Any] | None = None
     error: str | None = None
+
+
+class CaptionJobData(JobData):
+    type: JobType = JobType.CAPTION
+    image_file: str
+
+
+class ImageJobData(JobData):
+    type: JobType = JobType.IMAGE
+
+
+JobDataTypes = Annotated[CaptionJobData | ImageJobData, PydanticField(discriminator="type")]

@@ -28,16 +28,8 @@ async def send_chat_message(request: Request, message: ChatRequest) -> ChatRespo
         HTTPException: If message processing fails
     """
     try:
-        # Get MCP client from app state if available
-        mcp_client: Client | None = getattr(request.app.state, "mcp_client", None)
-        if mcp_client is None:
-            raise RuntimeError("MCP client is not available in app state")
-
         # Send message and get response
-        response = await chat_service.send_message(
-            message_content=message,
-            mcp_client=mcp_client,
-        )
+        response = await chat_service.send_message(message_content=message)
         if response:
             response_text = response
         else:

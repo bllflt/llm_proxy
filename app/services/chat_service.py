@@ -29,7 +29,6 @@ def _get_genai_client(api_key: str) -> genai.Client:
 
 async def send_message(
     message_content: ChatRequest,
-    mcp_client: Client,
 ) -> str | None:
     """
     Send a message and get a response from Gemini with MCP tools support.
@@ -88,5 +87,5 @@ async def send_message(
         return None
 
     except Exception as e:
-        print(e)
+        logging.error(f"Error during Gemini chat: {str(e)}")
         return None

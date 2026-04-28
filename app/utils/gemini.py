@@ -39,6 +39,11 @@ historical period mentioned in the character summery.  Set the background to be 
 character, like a smithy for a blacksmith for example, or a ruler sitting on a throne.  However, keep the focus
 on the character itself.
 
+Avoid explicit historical religious symbols: generic, fictional or fantastical symbols would be preferred. For example, do not
+show an explict cross, but a magical rune would be permitted.
+
+Output ONLY the prompt text, nothing else.
+
 environ: 13th century Eastern Mythiic Europe
 """
 
@@ -124,7 +129,7 @@ async def generate_image_prompt(
         async with local_mcp_client:
             (response,) = (
                 await model_client.aio.models.generate_content(
-                    model="gemini-2.5-flash-lite",
+                    model="gemini-3.1-flash-lite-preview",
                     contents=f"Generate a prompt for character id:{character_id}",
                     config=types.GenerateContentConfig(
                         system_instruction=GENERATE_IMAGE_PROMPT,
@@ -155,7 +160,7 @@ async def generate_image(
             contents=[prompt],
             config=types.GenerateContentConfig(
                 http_options=types.HttpOptions(timeout=60000),
-                image_config=types.ImageConfig(aspect_ratio="3:4"),
+                image_config=types.ImageConfig(image_size="512px", aspect_ratio="3:4"),
             ),
         )
         logging.error(f"done: {response}")

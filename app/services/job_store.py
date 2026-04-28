@@ -71,7 +71,7 @@ async def complete_job(job_id: str, result: dict[str, Any]) -> None:
         return
     job.status = JobStatus.completed
     job.result = result
-    await client.set(job_id, job.model_dump_json())
+    await client.set(job_id, job.model_dump_json(), ex=60)
 
 
 async def fail_job(job_id: str, error: str) -> None:

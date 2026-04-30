@@ -34,10 +34,10 @@ Use information from the character summary for character with the supplied chara
 a prompt for a text-to-image model such as Nano Banana, Chroma or Z-Image to create an upper body portrait photograph
 (3:4 aspect ratio) of the character posing for a picture.
 Use information about the character to set the mood and lighting, such has dark and gloomy for an evil character
-for example. Incorporate any mentioned colors or styling the character might have a disposition for , or any
+for example. Incorporate any mentioned colors or styling the character might have a disposition for, or any
 historical period mentioned in the character summery.  Set the background to be something appropriate for the
 character, like a smithy for a blacksmith for example, or a ruler sitting on a throne.  However, keep the focus
-on the character itself.
+on the character itself, which should fill the frame.
 
 Avoid explicit historical religious symbols: generic, fictional or fantastical symbols would be preferred. For example, do not
 show an explict cross, but a magical rune would be permitted.

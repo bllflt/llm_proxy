@@ -1,7 +1,6 @@
-"""Chat endpoints."""
+import logging
 
 from fastapi import APIRouter, HTTPException, Request, status
-from fastmcp import Client
 
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.services import chat_service
@@ -48,6 +47,25 @@ async def send_chat_message(request: Request, message: ChatRequest) -> ChatRespo
             detail=str(e),
         )
     except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error: {str(e)}",
+        )
+
+
+@router.post("/chat/get_history", tags=["chat"])
+async def get_chat_history():
+    response = []
+    try:
+        history = await chat_service.get_history("1")
+        for x in history:
+            for part in x["parts"]:
+                if part["text"] is not None:
+                    response.append(part["text"])
+        return response
+
+    except Exception as e:
+        logging.error(f"Error during Gemini chat: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Unexpected error: {str(e)}",

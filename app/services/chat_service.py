@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 import msgpack
 import redis.asyncio as redis
@@ -26,7 +27,7 @@ def _get_genai_client(api_key: str) -> genai.Client:
         raise ValueError("GEMINI_API_KEY must be configured")
     return genai.Client(api_key=api_key)
 
-async def get_history (user_id: str) -> list[genai_types.ContentOrDict]:
+async def get_history (user_id: str) -> list[Any]:
     packed = await client.get(_get_redis_key(user_id))
     if packed:
         history = msgpack.unpackb(packed, raw=False)

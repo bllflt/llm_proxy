@@ -4,6 +4,7 @@ import tempfile
 import httpx
 from google.genai import types
 
+from app.auth.jwt import create_access_token
 from app.config import settings
 from app.schemas.job import ImageJobData, JobStatus
 from app.services.job_store import complete_job, fail_job, get_job, update_job_status
@@ -16,8 +17,10 @@ async def submit_result(character_id: str, images: list[types.Image]):
         async with httpx.AsyncClient() as client:
             with tempfile.TemporaryDirectory() as temp_dir:
                 image.save(f"{temp_dir}/image.jpg")
+                token = create_access_token({"sub": "llm_proxy"})
                 await client.post(
                     settings.IMAGE_UPLOAD_ENDPOINT,
+                    headers={"Authorization": f"Bearer {token}"},
                     data={"character_id": character_id},
                     files={"image": open(f"{temp_dir}/image.jpg", "rb")},
                 )

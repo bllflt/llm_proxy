@@ -26,8 +26,7 @@ async def get_current_user(
         HTTPException: If token is invalid or missing
     """
     try:
-        user_id = "1"
-        # user_id = get_subject_from_token(credentials.credentials)
+        user_id = get_subject_from_token(credentials.credentials)
         return user_id
     except Exception as e:
         raise HTTPException(

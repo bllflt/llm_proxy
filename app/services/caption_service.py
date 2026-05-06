@@ -1,5 +1,6 @@
 import httpx
 
+from app.auth.jwt import create_access_token
 from app.config import settings
 from app.schemas.caption import CaptionJobResult
 from app.schemas.job import CaptionJobData, JobStatus
@@ -11,8 +12,10 @@ from app.utils.gemini import analyze_image, compare_descriptions, get_genai_clie
 async def submit_result(character_id: str, explanation: str | None, merge: str | None) -> None:
     """Submit the caption result to the external API endpoint."""
     async with httpx.AsyncClient() as client:
+        token = create_access_token({"sub": "llm_proxy"})
         await client.put(
             settings.RESULT_API_ENDPOINT,
+            headers={"Authorization": f"Bearer {token}"},
             json={
                 "character_id": character_id,
                 "explanation": explanation,

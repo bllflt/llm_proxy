@@ -39,15 +39,15 @@ async def process_image_job(job_id: str) -> None:
     except Exception as exc:
         await fail_job(job_id, str(exc))
         raise
-    logging.info(f"Gemini image generation prompt: {prompt}")
+    logging.debug(f"Gemini image generation prompt: {prompt}")
     if metadata:
         await update_llm_usage("image generation", metadata.total_token_count)
     if prompt is None:
         raise RuntimeError("Failed to generate image prompt")
     try:
-        logging.info("start waiting")
+        logging.debug("start waiting")
         images = await generate_image(model_client, job.character_id, prompt)
-        logging.info("done waiting")
+        logging.debug("done waiting")
     except Exception as exc:
         await fail_job(job_id, str(exc))
     if images is None:

@@ -40,9 +40,10 @@ class Settings(BaseSettings):
     # Chat
     CHAT_HISTORY_EXPIRE_MINUTES: int = 1440  # 24 hours
     CHAT_HISTORY_PREFIX: str = "chat"
-    CHAT_MODEL: str = "gemini-2.5-flash"
+    CHAT_MODEL: str = "gemini-3-flash"
 
     STATS_PREFIX: str = "stats"
+
 
 settings = Settings()
 

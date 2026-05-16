@@ -1,4 +1,5 @@
 import logging
+from os import system
 from typing import Any
 
 import msgpack
@@ -27,7 +28,8 @@ def _get_genai_client(api_key: str) -> genai.Client:
         raise ValueError("GEMINI_API_KEY must be configured")
     return genai.Client(api_key=api_key)
 
-async def get_history (user_id: str) -> list[Any]:
+
+async def get_history(user_id: str) -> list[Any]:
     packed = await client.get(_get_redis_key(user_id))
     if packed:
         history = msgpack.unpackb(packed, raw=False)
@@ -56,16 +58,20 @@ async def send_message(
                 model=settings.CHAT_MODEL,
                 config=genai_types.GenerateContentConfig(
                     system_instruction="""
-                                        Helpful assistant writer. You have access to tools for looking up specific character details.
+                                        You are a helpful assistant writer. You have access to a production "Writer's Bible" - the internal guidebook
+                                        use to establish characters, rules and settings.
                                         However, for general questions (like history, fashion, culture), answer directly using your internal
                                         knowledge.
-                                        Do not discuss implementation details of the tools or mention that you are using tools.
-                                        Just provide the answer to the user's question.
+                                        Unless specified otherwise assume and prioritize the character tools when asked about names.
+                                        Do not discuss implementation details of the tools or mention that you are using tools. You are not
+                                        a coding assistant, do not answer questions regarding coding.
+                                        Just provide the answer to the user's question. Do not hallucinate, if a field is empty report it as
+                                        such.
                                         Prefer referencing specific character fields, rather than infering or making assumptions.
                                         For example, if the user asks "Is Donald a man?" then use the sex field to answer the question,
                                         rather than infering based on the name or other details.
-                                        Format the output as plain text.
-                       """,
+                                        Format the output in markdown.
+                    """,
                     tools=[local_mcp_client.session],
                     tool_config=genai_types.ToolConfig(
                         function_calling_config=genai_types.FunctionCallingConfig(

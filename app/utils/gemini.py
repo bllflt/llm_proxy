@@ -67,7 +67,7 @@ async def analyze_image(
 
     try:
         response = await model_client.aio.models.generate_content(
-            model="gemini-2.5-flash-lite",
+            model="gemini-3.1-flash-lite",
             contents=[
                 types.Part.from_bytes(data=image_bytes, mime_type="image/png"),
                 "Describe the person in the picture.",
@@ -79,7 +79,7 @@ async def analyze_image(
     except Exception as e:
         raise RuntimeError(f"Error during Gemini image analysis: {str(e)}")
 
-    logging.info(f"Gemini image analysis response: {response}")
+    logging.debug(f"Gemini image analysis response: {response}")
     if response is None:
         raise RuntimeError("Gemini returned no response for image analysis")
 
@@ -95,7 +95,7 @@ async def compare_descriptions(
 ) -> tuple[CaptionJobResult, types.GenerateContentResponseUsageMetadata] | tuple[None, None]:
     """Compare two descriptions and return a merged result."""
     response = await model_client.aio.models.generate_content(
-        model="gemini-2.5-flash-lite",
+        model="gemini-3.1-flash-lite",
         contents=f"hurp({existing_description}, {new_description})",
         config=types.GenerateContentConfig(
             system_instruction=COMPARE_SYSTEM_PROMPT,
@@ -159,6 +159,7 @@ async def generate_image(
             model="gemini-3.1-flash-image-preview",
             contents=[prompt],
             config=types.GenerateContentConfig(
+                service_tier=types.ServiceTier.FLEX,
                 http_options=types.HttpOptions(timeout=60000),
                 image_config=types.ImageConfig(image_size="512px", aspect_ratio="3:4"),
             ),
@@ -169,7 +170,7 @@ async def generate_image(
 
         for part in response.parts:
             if part.text is not None:
-                logging.info(part.text)
+                logging.debug(part.text)
             elif part.inline_data is not None:
                 image = part.as_image()
                 images.append(image)

@@ -53,11 +53,11 @@ async def send_chat_message(request: Request, message: ChatRequest) -> ChatRespo
         )
 
 
-@router.post("/chat/get_history", tags=["chat"])
-async def get_chat_history():
+@router.post("/chat/get_history/{current_user_id}", tags=["chat"])
+async def get_chat_history(current_user_id: str):
     response = []
     try:
-        history = await chat_service.get_history("1")
+        history = await chat_service.get_history(current_user_id)
         for x in history:
             for part in x["parts"]:
                 if part["text"] is not None:

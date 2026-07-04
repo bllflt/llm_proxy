@@ -1,5 +1,4 @@
 import logging
-from os import system
 from typing import Any
 
 import msgpack
@@ -10,6 +9,7 @@ from google.genai import types as genai_types
 from google.genai.chats import AsyncChat
 from google.genai.errors import APIError
 
+from app.auth.jwt import create_access_token
 from app.config import settings
 from app.schemas.chat import ChatRequest
 from app.services.stats_service import update_llm_usage
@@ -46,10 +46,18 @@ async def send_message(
     """
     genai_client = _get_genai_client(settings.GEMINI_API_KEY)
 
+    token = create_access_token(
+        {
+            "sub": message_content.user_id,
+            "story_uuid": message_content.story_uuid,
+            "permitted_stories": message_content.permitted_stories,
+        }
+    )
+
     try:
-        local_mcp_client = Client(settings.MCP_ENDPOINT)
-        async with local_mcp_client:
-            packed = await client.get("chat:1:history")
+        local_mcp_client = Client(settings.MCP_ENDPOINT, auth=token)
+        async with local_mcp_client:  # notype: ignore
+            packed = await client.get(_get_redis_key(message_content.user_id))
             if packed:
                 history = msgpack.unpackb(packed, raw=False)
             else:
@@ -58,10 +66,11 @@ async def send_message(
                 model=settings.CHAT_MODEL,
                 config=genai_types.GenerateContentConfig(
                     system_instruction="""
-                                        You are a helpful assistant writer. You have access to a production "Writer's Bible" - the internal guidebook
-                                        use to establish characters, rules and settings.
-                                        However, for general questions (like history, fashion, culture), answer directly using your internal
-                                        knowledge.
+                                        You are a Medieval Fantasy Lore and History Assistant. Your purpose is to help users develop,
+                                        track and understand historical, cultural and mythological details for medieval fantasy settings.
+                                        You have access to a production "Writer's Bible" - the internal guidebook used to establish
+                                        characters, rules and settings. However, for general questions (like history, fashion,
+                                        culture), answer directly using your internal knowledge.
                                         Unless specified otherwise assume and prioritize the character tools when asked about names.
                                         Do not discuss implementation details of the tools or mention that you are using tools. You are not
                                         a coding assistant, do not answer questions regarding coding.
@@ -71,6 +80,19 @@ async def send_message(
                                         For example, if the user asks "Is Donald a man?" then use the sex field to answer the question,
                                         rather than infering based on the name or other details.
                                         Format the output in markdown.
+                                        Scope of Knowledge:
+                                          - You may discuss real-world medieval history, culture and warefare.
+                                          - You may discuss fictional world-building, lore, character backgrounds and medieval
+                                            fantasy tropes.
+                                        Strict Contraints:
+                                            - You are strictly prohibited from acting as a coding assistant, writing software code or debugging.
+                                            - You are strictly prohibited from offering mathematical, scientific or non-medieval factual advice.
+                                        Handling Out-of-Scope Requests:
+                                        If the user asks for anything related to coding, modern technology or any topic outside of
+                                        medieval fantasy and history, you must reply with exactly this message:
+                                        "I am designed exclusively for medieval fantasy lore and historical tracking. I cannot assist with
+                                        that topic."
+
                     """,
                     tools=[local_mcp_client.session],
                     tool_config=genai_types.ToolConfig(
@@ -87,7 +109,9 @@ async def send_message(
                 packed = msgpack.packb(history_to_save, use_bin_type=True)
                 if packed:
                     await client.set(
-                        "chat:1:history", packed, ex=settings.CHAT_HISTORY_EXPIRE_MINUTES * 60
+                        _get_redis_key(message_content.user_id),
+                        packed,
+                        ex=settings.CHAT_HISTORY_EXPIRE_MINUTES * 60,
                     )
                 logging.error(response.usage_metadata)
                 if response.usage_metadata:

@@ -11,6 +11,11 @@ class ChatRequest(BaseModel):
     """Chat message request."""
 
     content: str = Field(..., min_length=1, max_length=4096, description="User message")
+    story_uuid: str = Field(..., description="UUID of the story context for the chat")
+    user_id: str = Field(..., description="User ID for the chat session")
+    permitted_stories: list[str] = Field(
+        ..., description="List of story UUIDs the user is allowed to access"
+    )
 
 
 class ChatResponse(BaseModel):

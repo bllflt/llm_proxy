@@ -39,7 +39,7 @@ historical period mentioned in the character summery.  Set the background to be 
 character, like a smithy for a blacksmith for example, or a ruler sitting on a throne.  However, keep the focus
 on the character itself, which should fill the frame.
 
-Avoid explicit historical religious symbols: generic, fictional or fantastical symbols would be preferred. For example, do not
+Avoid explicit historical religious symbols only generic, fictional or fantastical symbols should be generated. For example, do not
 show an explict cross, but a magical rune would be permitted.
 
 Output ONLY the prompt text, nothing else.

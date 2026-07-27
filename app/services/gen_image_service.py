@@ -35,7 +35,7 @@ async def process_image_job(job_id: str) -> None:
     model_client = get_genai_client(settings.GEMINI_API_KEY)
 
     try:
-        (prompt, metadata) = await generate_image_prompt(model_client, job.character_id)
+        (prompt, metadata) = await generate_image_prompt(model_client, job.character_id, job.permitted_stories)
     except Exception as exc:
         await fail_job(job_id, str(exc))
         raise

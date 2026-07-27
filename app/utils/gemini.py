@@ -5,6 +5,7 @@ from fastmcp import Client
 from google import genai
 from google.genai import types
 
+from app.auth.jwt import create_access_token
 from app.config import settings
 from app.schemas.caption import CaptionJobResult
 
@@ -121,10 +122,17 @@ async def compare_descriptions(
 
 
 async def generate_image_prompt(
-    model_client: genai.Client, character_id: str
+    model_client: genai.Client, character_id: str, permitted_stories: list[str]
 ) -> tuple[str, types.GenerateContentResponseUsageMetadata] | tuple[None, None]:
+    token = create_access_token(
+        {
+            "sub": "llm_proxy",
+            "character_id": character_id,
+            "permitted_stories": permitted_stories,
+        }
+    )
+    local_mcp_client = Client(settings.MCP_ENDPOINT, auth=token)
 
-    local_mcp_client = Client(settings.MCP_ENDPOINT)
     try:
         async with local_mcp_client:
             (response,) = (

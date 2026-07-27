@@ -9,6 +9,7 @@ class ImageRequest(BaseModel):
     """Request payload for submitting a caption job."""
 
     character_id: str = Field(..., min_length=1)
+    permitted_stories: list[str] = Field(..., description="List of story UUIDs the user is allowed to access")
     current_description: str | None = None
 
 

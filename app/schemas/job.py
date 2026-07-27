@@ -35,6 +35,7 @@ class CaptionJobData(JobData):
 
 class ImageJobData(JobData):
     type: JobType = JobType.IMAGE
+    permitted_stories: list[str] = PydanticField(..., description="List of story UUIDs the user is allowed to access")
 
 
 JobDataTypes = Annotated[CaptionJobData | ImageJobData, PydanticField(discriminator="type")]

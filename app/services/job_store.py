@@ -29,6 +29,7 @@ async def create_job(type: JobType, **kwargs: Any) -> JobDataTypes:
             type=type,
             job_id=job_id,
             character_id=kwargs["character_id"],
+            permitted_stories=kwargs["permitted_stories"],
             current_description=kwargs["current_description"],
             created_by=kwargs["created_by"],
             status=JobStatus.pending,

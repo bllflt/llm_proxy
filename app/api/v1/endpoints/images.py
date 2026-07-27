@@ -19,6 +19,7 @@ async def create_gen_image_job(
     job = await create_job(
         type=JobType.IMAGE,
         character_id=payload.character_id,
+        permitted_stories=payload.permitted_stories,
         current_description=payload.current_description,
         created_by=user_id,
     )

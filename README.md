@@ -1,6 +1,6 @@
 # LLM Service
 
-LLM gatweay for [world building tool](https://github.com/bllflt/worldbuildingtools/blob/main/README.md)
+LLM gatweay for [world building tool](https://github.com/bllflt/worldbuildingtools/blob/main/README.md) application
 
 Concept:
   - Centralize all the LLM related code into a service
